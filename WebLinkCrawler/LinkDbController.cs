@@ -1011,6 +1011,12 @@ namespace WebLinkCrawler
 
         }
 
+        public string FixLastCharacter(string input)
+        {
+            if (input.Last() == '/')
+                input = input.Remove(input.Length - 1, 1);
 
+            return input;
+        }
     }
 }

@@ -66,12 +66,19 @@ namespace WebLinkCrawler
 
                         string curUrl = node.GetAttributeValue("href", string.Empty);
 
-                        if (!string.IsNullOrEmpty(curUrl))
+                        if (!string.IsNullOrEmpty(curUrl) && curUrl != "/")
                         {
                             if (curUrl.First() == '/')
                             {
-                                curUrl =  curUrl.Remove(0, 1);
+                                // curUrl =  curUrl.Remove(0, 1);
                                 curUrl = mCurrentLink + curUrl;
+                                // To be able to prevent double depth on url.
+                                curUrl = curUrl.Replace("//", "/");
+                            }
+
+                            if (curUrl.Last() == '/')
+                            {
+                                curUrl = curUrl.Remove(curUrl.Length - 1, 1);
                             }
 
                             result.Add(curUrl);

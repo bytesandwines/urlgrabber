@@ -279,7 +279,7 @@ namespace WebLinkCrawler
         private async Task<Tuple<List<string>, List<DomainInfo>>> GetCustomerShoppingPointsAsync(CustomLink curLink , int taskNumber)
         {
 
-            string driverResult = "Driver :" + taskNumber.ToString("0000") + " WebPage : " + curLink.Url.ToString(20, '.', true);
+            string driverResult = "Driver :" + taskNumber.ToString("0000") + " WebPage : " + curLink.Url.ToString(20, ' ', true);
             try
             {
                 
@@ -292,7 +292,7 @@ namespace WebLinkCrawler
                     });
                     UpdateTaskCount(taskNumber, true);
                     mProcessedUrlCount++;
-                    driverResult += " operation canceled by user";
+                    driverResult += "\t  operation canceled by user";
                     //driverStatues[taskNumber] = driverResult;
                     Thread.Sleep(100);
                     WriteToConsole(driverResult);
@@ -311,7 +311,7 @@ namespace WebLinkCrawler
                 catch (Exception ex)
                 {
                     Thread.Sleep(100);
-                    driverResult += "  webpage could not load. Ignoring this url";
+                    driverResult += "\t  webpage could not load. Ignoring this url";
                     WriteToConsole(driverResult);
                     UpdateTaskCount(taskNumber, true);
                     return null;
@@ -320,14 +320,14 @@ namespace WebLinkCrawler
                 Thread.Sleep(200);
                 tempList = await webDriver.ExtractLinks();
                 Thread.Sleep(200);
-                driverResult += "  total extracted links :" + tempList.Count;
+                driverResult += "\t  total extracted links :" + tempList.Count.ToString("00000");
 
                 var remainingLinkTuple = await mDbController.EliminateLinksWhoDoesntHaveDomainInfo(tempList);
                 Thread.Sleep(200);
 
                 try
                 {
-                    driverResult += "  remaining url count after elimination :" + remainingLinkTuple.Item1.Count;
+                    driverResult += "\t  remaining url count after elimination :" + remainingLinkTuple.Item1.Count.ToString("00000");
                     Thread.Sleep(200);
                     WriteToConsole(driverResult);
 
@@ -345,7 +345,7 @@ namespace WebLinkCrawler
             {
                 UpdateTaskCount(taskNumber, true);
                 mProcessedUrlCount++;
-                driverResult = " task is chrashed with exception : " + ex.Message;
+                driverResult = "\t  task is chrashed with exception : " + ex.Message;
                 Thread.Sleep(100);
                 WriteToConsole(driverResult);
                 return null;
@@ -460,9 +460,13 @@ namespace WebLinkCrawler
                 return;
             }
 
-            var uniques = tempList.Distinct();
+            // Fixing last character of urls
+            var newList = tempList.Select(s =>  mDbController.FixLastCharacter(s)).ToList();
+            // Selecting only unique ones.
+            var uniques = newList.Distinct();
+            // Checking contains conditions
             var remaining = uniques.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
-
+            // TADA now save the remainings.
             try
             {
                 mDbController.UpdateOutput(mOutputFilePath, remaining);
@@ -474,6 +478,11 @@ namespace WebLinkCrawler
                 MessageBox.Show("Çıktı dosyasını düzeltme işlemi başarısız oldu!");
             }
             
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
