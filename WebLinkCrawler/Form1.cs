@@ -26,6 +26,7 @@ namespace WebLinkCrawler
         private bool mFlagStop = false;
         private int initialLinkCount;
         private int mTaskCount = 0;
+        private List<bool> taskResults = new List<bool>();
         public Form1()
         {
             InitializeComponent();
@@ -38,10 +39,20 @@ namespace WebLinkCrawler
 
             this.btnStart.EnabledChanged += BtnStart_EnabledChanged;
             this.btnStop.EnabledChanged += BtnStop_EnabledChanged;
-
+            this.btnFix.EnabledChanged += BtnFix_EnabledChanged;
             if (!InitializeControllers())
                 return;
         }
+
+        private void BtnFix_EnabledChanged(object sender, EventArgs e)
+        {
+            if (btnFix.Enabled)
+                btnFix.BackColor = Color.Orange;
+            else
+                btnFix.BackColor = Color.FromArgb(33, 33, 33);
+        }
+
+        private List<string> driverStatues = new List<string>();
 
         private void BtnStop_EnabledChanged(object sender, EventArgs e)
         {
@@ -128,7 +139,7 @@ namespace WebLinkCrawler
             }
 
 
-            mDbController = new LinkDbController((int)numMaxNumberDomainCollected.Value, (int)numMaxNumberLinkDiversity.Value, (int)numTimeout.Value);
+            mDbController = new LinkDbController((int)numMaxNumberDomainCollected.Value, (int)numMaxNumberLinkDiversity.Value, (int)numTimeout.Value, (int) numTaskCount.Value);
             return true;
             
         }
@@ -144,6 +155,7 @@ namespace WebLinkCrawler
            {
                btnStart.Enabled = false;
                btnStop.Enabled = true;
+               btnFix.Enabled = false;
            });
 
 
@@ -172,7 +184,10 @@ namespace WebLinkCrawler
             mFlagStop = false;
 
             int connectionErrorCount = 0;
-            mDbController.ProcessInitialLinks();
+
+            WriteToConsole("Going to process initial links to create candidate urls");
+            bool initialLinksProcessed = mDbController.ProcessInitialLinks().Result;
+            WriteToConsole("Candidate urls are initialized");
             mProcessedUrlCount = 0;
 
             Thread worker = new Thread(async () =>
@@ -193,9 +208,16 @@ namespace WebLinkCrawler
                     currentLinks = await mDbController.TakeMax();
 
                     List<Task<bool>> extractTasks = new List<Task<bool>>();
+                    
                     var tasks = new List<Task<Tuple<List<string>, List<DomainInfo>>>>();
+                    driverStatues = new List<string>();
+                    taskResults = new List<bool>();
+
+                    SetTaskCount(currentLinks.Count);
                     for (int i = 0; i < currentLinks.Count; i++)
                     {
+                        taskResults.Add(false);
+                        driverStatues.Add("");
                         tasks.Add(GetCustomerShoppingPointsAsync(currentLinks[i], i));
                     }
 
@@ -217,6 +239,7 @@ namespace WebLinkCrawler
                         
                     }
 
+                    TaskHelper.RemoveTaskList(ref tasks);
 
                     WriteToConsole("#### Going to insert candidates into the database  ###");
                     await mDbController.InsertCandidatesToDatabase(new Tuple<List<string>, List<DomainInfo>>(candidateUrls, candidateDomains));
@@ -225,7 +248,11 @@ namespace WebLinkCrawler
                     var candidateCount = mDbController.GetCandidatesCount();
                     int toplamİslenen = mDbController.GetCount();
                     SetLastIteratioInformation("", toplamİslenen, candidateCount, initialLinkCount);
-                    
+
+
+                    /// UPDATED: 13.12.2019
+                    /// Added : saving results after each iteration.
+                    mDbController.Save(mOutputFilePath);
 
                     ClearConsole();
                 }
@@ -239,6 +266,7 @@ namespace WebLinkCrawler
                 btnStart.BeginInvoke((MethodInvoker)delegate
                 {
                     btnStart.Enabled = true;
+                    btnFix.Enabled = true;
                 });
 
             });
@@ -250,27 +278,28 @@ namespace WebLinkCrawler
 
         private async Task<Tuple<List<string>, List<DomainInfo>>> GetCustomerShoppingPointsAsync(CustomLink curLink , int taskNumber)
         {
+
+            string driverResult = "Driver :" + taskNumber.ToString("0000") + " WebPage : " + curLink.Url.ToString(20, '.', true);
             try
             {
-                mTaskCount++;
-                var taskCount = mTaskCount;
-                SetTaskCount(taskCount);
-
+                
                 if (mFlagStop)
                 {
-                    WriteToConsole(":( Operation is terminated by the user. Going to save the current results.");
+                    // WriteToConsole(":( Operation is terminated by the user. Going to save the current results.");
                     btnStop.BeginInvoke((MethodInvoker)delegate
                     {
                         btnStop.Enabled = false;
                     });
-                    mTaskCount--;
-                    taskCount = mTaskCount;
-                    SetTaskCount(taskCount);
+                    UpdateTaskCount(taskNumber, true);
                     mProcessedUrlCount++;
+                    driverResult += " operation canceled by user";
+                    //driverStatues[taskNumber] = driverResult;
+                    Thread.Sleep(100);
+                    WriteToConsole(driverResult);
                     return null;
                 }
 
-                WriteToConsole("TaskNumber:" + taskNumber.ToString() + "Driver kitlendi.");
+                // WriteToConsole("TaskNumber:" + taskNumber.ToString() + "Driver kitlendi.");
                 List<string> tempList = new List<string>();
                 var webDriver = new WebDriverController();
 
@@ -281,153 +310,50 @@ namespace WebLinkCrawler
                 }
                 catch (Exception ex)
                 {
-                    mTaskCount--;
-                    taskCount = mTaskCount;
-                    SetTaskCount(taskCount);
-                    mProcessedUrlCount++;
-                    WriteToConsole("TaskNumber: " + taskNumber.ToString() + "Driver is crashed");
+                    Thread.Sleep(100);
+                    driverResult += "  webpage could not load. Ignoring this url";
+                    WriteToConsole(driverResult);
+                    UpdateTaskCount(taskNumber, true);
                     return null;
                 }
 
+                Thread.Sleep(200);
                 tempList = await webDriver.ExtractLinks();
-                WriteToConsole("TaskNumber:" + taskNumber.ToString() + "Total Extracted Url Count From Website :" + tempList.Count.ToString());
+                Thread.Sleep(200);
+                driverResult += "  total extracted links :" + tempList.Count;
 
-                WriteToConsole("TaskNumber:" + taskNumber.ToString() + " Going to eliminate extracted urls w.t.r their domain knowledge which we cannot retrieve");
                 var remainingLinkTuple = await mDbController.EliminateLinksWhoDoesntHaveDomainInfo(tempList);
-                WriteToConsole("TaskNumber:" + taskNumber.ToString() + " domain knowledge elimination is finished");
-
-                // remainingLinkTuple = await mDbController.EliminateLinksWhichCannotBeAccessed(remainingLinkTuple.Item1 , remainingLinkTuple.Item2);
-
-
-
-                // tempList = await mDbController.EliminateExtractedLinks(curLink.DomainName, tempList);
+                Thread.Sleep(200);
 
                 try
                 {
-                    WriteToConsole("TaskNumber:" + taskNumber.ToString()
-                    + "Total Url Count From Website  After Elimination :" + remainingLinkTuple.Item1.Count.ToString());
+                    driverResult += "  remaining url count after elimination :" + remainingLinkTuple.Item1.Count;
+                    Thread.Sleep(200);
+                    WriteToConsole(driverResult);
+
                 }
                 catch (Exception)
                 {
                     
                 }
-                // Listeye ekle.
-                // mDbController.AddRangeUrl(tempList);
-                // Memory'i boşalt
-                //var candidateCount = mDbController.GetCandidatesCount();
-                //int toplamİslenen = mDbController.GetCount();
-                mProcessedUrlCount++;
-                // SetLastIteratioInformation(curLink.Url, toplamİslenen, candidateCount, initialLinkCount);
-
                 // WriteToConsole("Candidates are : " + mDbController.GetCandidates());
-                mTaskCount--;
-                taskCount = mTaskCount;
-                SetTaskCount(taskCount);
+                UpdateTaskCount(taskNumber, true);
 
-                return remainingLinkTuple; // made up customer shopping points
+                return remainingLinkTuple; 
             }
             catch (Exception ex)
             {
-                mTaskCount--;
-                var taskCount = mTaskCount;
-                SetTaskCount(taskCount);
+                UpdateTaskCount(taskNumber, true);
                 mProcessedUrlCount++;
-                WriteToConsole("TaskNumber: " + taskNumber.ToString() + "task is crashed");
+                driverResult = " task is chrashed with exception : " + ex.Message;
+                Thread.Sleep(100);
+                WriteToConsole(driverResult);
                 return null;
             }
 
         }
 
-        private async Task<bool> Hebele(CustomLink curLink)
-        {
-            WriteToConsole("Task işe başladı.");
-            //curLink = currentLinks[i];
-            mTaskCount++;
-            var taskCount = mTaskCount;
-            SetTaskCount(taskCount);
-            if (curLink == null)
-                return false;
-
-            if (mFlagStop)
-            {
-                WriteToConsole(":( Operation is terminated by the user. Going to save the current results.");
-                btnStop.BeginInvoke((MethodInvoker)delegate
-                {
-                    btnStop.Enabled = false;
-                });
-                mProcessedUrlCount++;
-                return false;
-            }
-
-            WriteToConsole("Driver kitlendi.");
-            //List<string> tempList = new List<string>();
-            //var webDriver = new WebDriverController();
-
-            //try
-            //{
-            //    webDriver.Navigate(curLink.Url);
-            //    Thread.Sleep(mPageLoadTimeout);
-            //}
-            //catch (Exception)
-            //{
-            //    Thread.Sleep(mPageLoadTimeout);
-            //    mProcessedUrlCount++;
-            //    return false;
-            //}
-
-            //WriteToConsole("Driver sayfa yüklendi");
-            //tempList = webDriver.ExtractLinks();
-            //WriteToConsole("Driver sayfadan linkler alındı.");
-
-            Thread.Sleep(1000);
-            // WriteToConsole("Total Extracted Url Count From Website :" + tempList.Count.ToString());
-
-
-            //if (mFlagStop)
-            //{
-            //    WriteToConsole(":( Operation is terminated by the user. Going to save the current results.");
-            //    btnStop.BeginInvoke((MethodInvoker)delegate
-            //    {
-            //        btnStop.Enabled = false;
-            //    });
-            //    mProcessedUrlCount++;
-            //    return false;
-            //}
-
-            //tempList = await mDbController.EliminateExtractedLinks(curLink.DomainName, tempList);
-
-            //if (tempList == null)
-            //{
-            //    mProcessedUrlCount++;
-            //    return false;
-            //}
-
-
-            //WriteToConsole("Total Url Count From Website  After Elimination :" + tempList.Count.ToString());
-            //// Listeye ekle.
-            //mDbController.AddRangeUrl(tempList);
-            //// Memory'i boşalt
-            //var candidateCount = mDbController.GetCandidatesCount();
-            //int toplamİslenen = mDbController.GetCount();
-            //mProcessedUrlCount++;
-            //SetLastIteratioInformation(curLink.Url, toplamİslenen, candidateCount, initialLinkCount);
-            //// WriteToConsole("Candidates are : " + mDbController.GetCandidates());
-
-            //tempList.Clear();
-
-            //var count = mDbController.GetCount();
-
-
-
-            //WriteToConsole("DB Link Count :  " + count.ToString());
-            //WriteToConsole("************************");
-            mTaskCount--;
-            taskCount = mTaskCount;
-            SetTaskCount(taskCount);
-
-            return true;
-        }
-        private void WriteToConsole(string pText)
+       private void WriteToConsole(string pText)
         {
             if (this.rtbConsole.InvokeRequired)
             {
@@ -447,8 +373,20 @@ namespace WebLinkCrawler
 
         }
 
+
+        private void UpdateTaskCount(int index, bool state)
+        {
+            lock(taskResults)
+            {
+                taskResults[index] = state;
+
+                int count =taskResults.Count(x => x == false);
+                SetTaskCount(count);
+            }
+        }
         private void SetTaskCount(int count)
         {
+
             mTaskCount = count;
             lblTaskCount.BeginInvoke((MethodInvoker)delegate
            {
@@ -459,7 +397,6 @@ namespace WebLinkCrawler
         {
             this.BeginInvoke((MethodInvoker)delegate
            {
-               this.lblLastUrl.Text = pUrl;
                this.lblTotalUrl.Text = totalLinks.ToString();
                this.lblnitialUrl.Text = initialLinks.ToString();
                this.remainingUrls.Text = adayListesi.ToString();
@@ -485,7 +422,6 @@ namespace WebLinkCrawler
         {
             this.BeginInvoke((MethodInvoker)delegate
            {
-               this.lblLastUrl.Text = "------";
                this.lblTotalUrl.Text = "------";
                this.lblnitialUrl.Text = "------";
                this.remainingUrls.Text = "------";
@@ -527,7 +463,17 @@ namespace WebLinkCrawler
             var uniques = tempList.Distinct();
             var remaining = uniques.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
 
-            mDbController.UpdateOutput(mOutputFilePath, remaining);
+            try
+            {
+                mDbController.UpdateOutput(mOutputFilePath, remaining);
+                MessageBox.Show("Çıktı dosyası başarı ile düzeltildi.");
+                
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Çıktı dosyasını düzeltme işlemi başarısız oldu!");
+            }
+            
         }
     }
 }

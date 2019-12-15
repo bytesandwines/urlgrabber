@@ -45,10 +45,13 @@ namespace WebLinkCrawler
 
         private DomainParser mDomainParser;
         private int mWebRequestTimeout = 3000;
-        public LinkDbController(int pMaxNumberDomainCollected, int pMaxNumberLinkDiversity, int webRequestTimeout =3000)
+        int maxParallelProcess = 100;
+
+        public LinkDbController(int pMaxNumberDomainCollected, int pMaxNumberLinkDiversity, int webRequestTimeout =3000, int parallelDriverCount = 350)
         {
             mDic = new Dictionary<string, List<CustomLink>>();
             mCandidateUrls = new List<string>();
+            
 
             /// Updated: fcdalgic, 01.11.2019
             /// Timeout süresinin kullanıcı arayüzünden seçilebilmesi için eklenmiştir.
@@ -58,6 +61,7 @@ namespace WebLinkCrawler
 
             mMaxNumberLinkDiversity = pMaxNumberLinkDiversity;
 
+            this.maxParallelProcess = parallelDriverCount;
             mDomainParser = new DomainParser(new FileTldRuleProvider(@"data\effective_tld_names.dat"));//  new DomainParser(new WebTldRuleProvider());
 
             /// Nager.PublicSuffix.
@@ -126,112 +130,124 @@ namespace WebLinkCrawler
             return result;
         }
 
-        public async void ProcessInitialLinks()
+        public async Task<bool> ProcessInitialLinks()
         {
-            // HTTP, HTTPS veya www ile başlamayan tüm linkleri elemine et!
-            mCandidateUrls = mCandidateUrls.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
-
-            List<Task<DomainInfo>> tasks = new List<Task<DomainInfo>>();
-            Console.WriteLine("Adayların tamamına ait domain bilgileri alınmak üzere taskler oluşturuluyor....");
-            DateTime dt1 = DateTime.Now;
-            for (int i = 0; i < mCandidateUrls.Count; i++)
+            try
             {
-                Task<DomainInfo> task = mDomainParser.ParseAsync(mCandidateUrls[i]);
-                tasks.Add(task);
-            }
+                // HTTP, HTTPS veya www ile başlamayan tüm linkleri elemine et!
+                mCandidateUrls = mCandidateUrls.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
 
-            Console.WriteLine("Aday domain bilgilerinin alınması için beklenecek....");
-            var allDomainTasks = await Task<DomainInfo>.WhenAll(tasks);
-            var taskResults = allDomainTasks.ToList();
-            List<int> removalList = new List<int>();
-            for (int i = 0; i < taskResults.Count; i++)
-            {
-                if (taskResults[i] == null)
-                    removalList.Add(i);
-            }
-
-            for (int i = 0; i < removalList.Count; i++)
-            {
-                mCandidateUrls.RemoveAt(removalList[i] - i);
-                taskResults.RemoveAt(removalList[i] - i);
-            }
-
-            removalList = new List<int>();
-            int numberOfCandidate = 0;
-          
-            var domainInfos = taskResults.ToList();          
-            for (int i = 0; i < mCandidateUrls.Count; i++)
-            {
-
-                string host = GetHost(domainInfos[i]);
-                if (string.IsNullOrEmpty(host))
+                List<Task<DomainInfo>> tasks = new List<Task<DomainInfo>>();
+                Console.WriteLine("Adayların tamamına ait domain bilgileri alınmak üzere taskler oluşturuluyor....");
+                DateTime dt1 = DateTime.Now;
+                for (int i = 0; i < mCandidateUrls.Count; i++)
                 {
-                    continue;
+                    Task<DomainInfo> task = mDomainParser.ParseAsync(mCandidateUrls[i]);
+                    tasks.Add(task);
                 }
 
-                string tempUrl = mCandidateUrls[i];
-                if (mDic.Keys.Contains(host))
+                Console.WriteLine("Aday domain bilgilerinin alınması için beklenecek....");
+                var allDomainTasks = await Task<DomainInfo>.WhenAll(tasks);
+
+                // Dispose all tasks
+                TaskHelper.RemoveTaskList(ref tasks);
+
+                var taskResults = allDomainTasks.ToList();
+                List<int> removalList = new List<int>();
+                for (int i = 0; i < taskResults.Count; i++)
                 {
-                    if (mDic[host].Count > mMaxNumberLinkDiversity)
-                    {
+                    if (taskResults[i] == null)
                         removalList.Add(i);
-                        continue;
-                    }
                 }
-                else
+
+                for (int i = 0; i < removalList.Count; i++)
                 {
-                    if (mDic.Keys.Count > mMaxNumberDomainCollected)
+                    mCandidateUrls.RemoveAt(removalList[i] - i);
+                    taskResults.RemoveAt(removalList[i] - i);
+                }
+
+                removalList = new List<int>();
+                int numberOfCandidate = 0;
+
+                var domainInfos = taskResults.ToList();
+                for (int i = 0; i < mCandidateUrls.Count; i++)
+                {
+
+                    string host = GetHost(domainInfos[i]);
+                    if (string.IsNullOrEmpty(host))
                     {
-                        removalList.Add(i);
                         continue;
                     }
 
-                    mDic.Add(host, new List<CustomLink>());
+                    string tempUrl = mCandidateUrls[i];
+                    if (mDic.Keys.Contains(host))
+                    {
+                        if (mDic[host].Count > mMaxNumberLinkDiversity)
+                        {
+                            removalList.Add(i);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if (mDic.Keys.Count > mMaxNumberDomainCollected)
+                        {
+                            removalList.Add(i);
+                            continue;
+                        }
 
-                    if (mDic.Keys.Count == mMaxNumberDomainCollected)
+                        mDic.Add(host, new List<CustomLink>());
+
+                        if (mDic.Keys.Count == mMaxNumberDomainCollected)
+                        {
+                            removalList.Add(i);
+                        }
+
+                    }
+
+                    var tempLink = new CustomLink(host)
+                    {
+                        IsProcessed = false,
+                        Url = tempUrl
+                    };
+
+                    mDic[host].Add(tempLink);
+
+                }
+
+                for (int i = 0; i < removalList.Count; i++)
+                {
+                    mCandidateUrls.RemoveAt(removalList[i] - i);
+                    taskResults.RemoveAt(removalList[i] - i);
+                }
+
+                List<string> tempCandidates = new List<string>();
+                removalList = new List<int>();
+                for (int i = 0; i < mCandidateUrls.Count; i++)
+                {
+                    string host = GetHost(domainInfos[i]);
+                    if (mDic[host].Count == mMaxNumberLinkDiversity)
                     {
                         removalList.Add(i);
                     }
-
                 }
 
-                var tempLink = new CustomLink(host)
+                for (int i = 0; i < removalList.Count; i++)
                 {
-                    IsProcessed = false,
-                    Url = tempUrl
-                };
-
-                mDic[host].Add(tempLink);
-
-            }
-
-            for (int i = 0; i < removalList.Count; i++)
-            {
-                mCandidateUrls.RemoveAt(removalList[i] - i);
-                taskResults.RemoveAt(removalList[i] - i);
-            }
-
-            List<string> tempCandidates = new List<string>();
-            removalList = new List<int>();
-            for (int i = 0; i < mCandidateUrls.Count; i++)
-            {
-                string host = GetHost(domainInfos[i]);
-                if (mDic[host].Count == mMaxNumberLinkDiversity)
-                {
-                    removalList.Add(i);
+                    mCandidateUrls.RemoveAt(removalList[i] - i);
+                    taskResults.RemoveAt(removalList[i] - i);
                 }
             }
-
-            for (int i = 0; i < removalList.Count; i++)
+            catch (Exception)
             {
-                mCandidateUrls.RemoveAt(removalList[i] - i);
-                taskResults.RemoveAt(removalList[i] - i);
+                return false;
             }
 
             Console.WriteLine("Aday sayisi : " + mCandidateUrls.Count.ToString());
+            return true;
         }
 
-        int maxParallelProcess = 350;
+        
         public async Task<List<CustomLink>> TakeMax()
         {
             List<CustomLink> val = new List<CustomLink>();
@@ -245,6 +261,9 @@ namespace WebLinkCrawler
             }
 
             var allDomainTasks = await Task<DomainInfo>.WhenAll(tasks);
+
+            TaskHelper.RemoveTaskList(ref tasks);
+
             var domainResults = allDomainTasks.ToList();
 
 
