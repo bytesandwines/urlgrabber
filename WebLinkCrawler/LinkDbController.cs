@@ -237,6 +237,17 @@ namespace WebLinkCrawler
                     mCandidateUrls.RemoveAt(removalList[i] - i);
                     taskResults.RemoveAt(removalList[i] - i);
                 }
+
+
+                /// ADDED: 16.12.2019 
+                /// Store only one sample per each domain in the candidate urls
+                mCandidateUrls = new List<string>();
+                foreach (var host in mDic.Keys)
+                {
+                    mCandidateUrls.Add(mDic[host][0].Url);
+                }
+
+
             }
             catch (Exception)
             {

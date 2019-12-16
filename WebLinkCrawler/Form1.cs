@@ -46,28 +46,28 @@ namespace WebLinkCrawler
 
         private void BtnFix_EnabledChanged(object sender, EventArgs e)
         {
-            if (btnFix.Enabled)
-                btnFix.BackColor = Color.Orange;
-            else
-                btnFix.BackColor = Color.FromArgb(33, 33, 33);
+            //if (btnFix.Enabled)
+            //    btnFix.BackColor = Color.Orange;
+            //else
+            //    btnFix.BackColor = Color.FromArgb(33, 33, 33);
         }
 
         private List<string> driverStatues = new List<string>();
 
         private void BtnStop_EnabledChanged(object sender, EventArgs e)
         {
-            if (btnStop.Enabled)
-                btnStop.BackColor = Color.FromArgb(192, 0, 0);
-            else
-                btnStop.BackColor = Color.FromArgb(33, 33, 33);
+            //if (btnStop.Enabled)
+            //    btnStop.BackColor = Color.FromArgb(192, 0, 0);
+            //else
+            //    btnStop.BackColor = Color.FromArgb(33, 33, 33);
         }
 
         private void BtnStart_EnabledChanged(object sender, EventArgs e)
         {
-            if (btnStart.Enabled)
-                btnStart.BackColor = Color.Green;
-            else
-                btnStart.BackColor = Color.FromArgb(33, 33, 33);
+            //if (btnStart.Enabled)
+            //    btnStart.BackColor = Color.Green;
+            //else
+            //    btnStart.BackColor = Color.FromArgb(33, 33, 33);
         }
 
         private void btnFile_Click(object sender, EventArgs e)

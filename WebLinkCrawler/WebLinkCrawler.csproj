@@ -75,6 +75,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="data\effective_tld_names.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -94,6 +95,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\btn-stop-512.png" />
+    <None Include="assets\btn-play-512.png" />
+    <None Include="assets\btn-pause-512.png" />
+    <None Include="assets\btn-fix-512.png" />
+    <None Include="assets\btn-stop-256.png" />
+    <None Include="assets\btn-fix-256.png" />
+    <None Include="assets\btn-pause-256.png" />
+    <None Include="assets\btn-play-256.png" />
     <Content Include="data\brandNames.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

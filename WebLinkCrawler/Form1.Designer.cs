@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
             this.btnOutputFile = new System.Windows.Forms.Button();
             this.tbOutputCSVFile = new System.Windows.Forms.TextBox();
@@ -37,7 +38,6 @@
             this.tbFile = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.rtbConsole = new System.Windows.Forms.RichTextBox();
-            this.btnStart = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.numTaskCount = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
@@ -47,7 +47,6 @@
             this.numMaxNumberDomainCollected = new System.Windows.Forms.NumericUpDown();
             this.label6 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
-            this.btnStop = new System.Windows.Forms.Button();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.lblTaskCount = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
@@ -61,7 +60,10 @@
             this.label11 = new System.Windows.Forms.Label();
             this.lblTotalUrl = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.btnFix = new System.Windows.Forms.Button();
+            this.btnStop = new System.Windows.Forms.Button();
+            this.btnStart = new System.Windows.Forms.Button();
             this.groupBox7.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
@@ -81,7 +83,7 @@
             this.groupBox7.ForeColor = System.Drawing.Color.White;
             this.groupBox7.Location = new System.Drawing.Point(12, 266);
             this.groupBox7.Name = "groupBox7";
-            this.groupBox7.Size = new System.Drawing.Size(745, 70);
+            this.groupBox7.Size = new System.Drawing.Size(715, 70);
             this.groupBox7.TabIndex = 12;
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "Output File";
@@ -90,9 +92,9 @@
             // 
             this.btnOutputFile.BackColor = System.Drawing.Color.Green;
             this.btnOutputFile.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnOutputFile.Location = new System.Drawing.Point(590, 24);
+            this.btnOutputFile.Location = new System.Drawing.Point(590, 27);
             this.btnOutputFile.Name = "btnOutputFile";
-            this.btnOutputFile.Size = new System.Drawing.Size(110, 32);
+            this.btnOutputFile.Size = new System.Drawing.Size(110, 29);
             this.btnOutputFile.TabIndex = 3;
             this.btnOutputFile.Text = "Select";
             this.btnOutputFile.UseVisualStyleBackColor = false;
@@ -124,7 +126,7 @@
             this.groupBox2.ForeColor = System.Drawing.Color.White;
             this.groupBox2.Location = new System.Drawing.Point(12, 19);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(745, 70);
+            this.groupBox2.Size = new System.Drawing.Size(715, 70);
             this.groupBox2.TabIndex = 7;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Initial Url List";
@@ -133,7 +135,7 @@
             // 
             this.btnFile.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
             this.btnFile.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnFile.Location = new System.Drawing.Point(590, 23);
+            this.btnFile.Location = new System.Drawing.Point(590, 25);
             this.btnFile.Name = "btnFile";
             this.btnFile.Size = new System.Drawing.Size(110, 29);
             this.btnFile.TabIndex = 2;
@@ -163,22 +165,9 @@
             this.rtbConsole.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
             this.rtbConsole.Location = new System.Drawing.Point(12, 478);
             this.rtbConsole.Name = "rtbConsole";
-            this.rtbConsole.Size = new System.Drawing.Size(745, 202);
+            this.rtbConsole.Size = new System.Drawing.Size(715, 202);
             this.rtbConsole.TabIndex = 13;
             this.rtbConsole.Text = "";
-            // 
-            // btnStart
-            // 
-            this.btnStart.BackColor = System.Drawing.Color.Green;
-            this.btnStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnStart.ForeColor = System.Drawing.Color.White;
-            this.btnStart.Location = new System.Drawing.Point(418, 686);
-            this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(162, 41);
-            this.btnStart.TabIndex = 14;
-            this.btnStart.Text = "Start";
-            this.btnStart.UseVisualStyleBackColor = false;
-            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
             // groupBox1
             // 
@@ -194,7 +183,7 @@
             this.groupBox1.ForeColor = System.Drawing.Color.White;
             this.groupBox1.Location = new System.Drawing.Point(12, 101);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(745, 159);
+            this.groupBox1.Size = new System.Drawing.Size(715, 159);
             this.groupBox1.TabIndex = 8;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Driver Settings";
@@ -202,7 +191,7 @@
             // 
             // numTaskCount
             // 
-            this.numTaskCount.Location = new System.Drawing.Point(586, 84);
+            this.numTaskCount.Location = new System.Drawing.Point(590, 84);
             this.numTaskCount.Maximum = new decimal(new int[] {
             500,
             0,
@@ -214,7 +203,7 @@
             0,
             0});
             this.numTaskCount.Name = "numTaskCount";
-            this.numTaskCount.Size = new System.Drawing.Size(120, 29);
+            this.numTaskCount.Size = new System.Drawing.Size(110, 29);
             this.numTaskCount.TabIndex = 12;
             this.numTaskCount.Value = new decimal(new int[] {
             350,
@@ -271,14 +260,14 @@
             // 
             // numMaxNumberLinkDiversity
             // 
-            this.numMaxNumberLinkDiversity.Location = new System.Drawing.Point(586, 42);
+            this.numMaxNumberLinkDiversity.Location = new System.Drawing.Point(590, 42);
             this.numMaxNumberLinkDiversity.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
             this.numMaxNumberLinkDiversity.Name = "numMaxNumberLinkDiversity";
-            this.numMaxNumberLinkDiversity.Size = new System.Drawing.Size(120, 29);
+            this.numMaxNumberLinkDiversity.Size = new System.Drawing.Size(110, 29);
             this.numMaxNumberLinkDiversity.TabIndex = 8;
             this.numMaxNumberLinkDiversity.Value = new decimal(new int[] {
             4,
@@ -328,20 +317,6 @@
             this.label4.Text = "Max Unique Web Page Count :";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // btnStop
-            // 
-            this.btnStop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.btnStop.Enabled = false;
-            this.btnStop.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnStop.ForeColor = System.Drawing.Color.White;
-            this.btnStop.Location = new System.Drawing.Point(595, 686);
-            this.btnStop.Name = "btnStop";
-            this.btnStop.Size = new System.Drawing.Size(162, 41);
-            this.btnStop.TabIndex = 15;
-            this.btnStop.Text = "Stop";
-            this.btnStop.UseVisualStyleBackColor = false;
-            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
-            // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.lblTaskCount);
@@ -360,7 +335,7 @@
             this.groupBox3.ForeColor = System.Drawing.Color.White;
             this.groupBox3.Location = new System.Drawing.Point(12, 380);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(745, 92);
+            this.groupBox3.Size = new System.Drawing.Size(715, 92);
             this.groupBox3.TabIndex = 16;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "From Last Iteration";
@@ -476,23 +451,62 @@
             // 
             // btnFix
             // 
-            this.btnFix.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+            this.btnFix.BackColor = System.Drawing.Color.Transparent;
+            this.btnFix.BackgroundImage = global::WebLinkCrawler.Properties.Resources.btn_fix_256;
+            this.btnFix.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnFix.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnFix.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnFix.ForeColor = System.Drawing.Color.White;
-            this.btnFix.Location = new System.Drawing.Point(250, 686);
+            this.btnFix.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
+            this.btnFix.Location = new System.Drawing.Point(612, 695);
+            this.btnFix.Margin = new System.Windows.Forms.Padding(0);
             this.btnFix.Name = "btnFix";
-            this.btnFix.Size = new System.Drawing.Size(162, 41);
+            this.btnFix.Size = new System.Drawing.Size(25, 25);
             this.btnFix.TabIndex = 17;
-            this.btnFix.Text = "Fix Output";
+            this.toolTip1.SetToolTip(this.btnFix, "Fix Output");
             this.btnFix.UseVisualStyleBackColor = false;
             this.btnFix.Click += new System.EventHandler(this.btnFix_Click);
+            // 
+            // btnStop
+            // 
+            this.btnStop.BackColor = System.Drawing.Color.Transparent;
+            this.btnStop.BackgroundImage = global::WebLinkCrawler.Properties.Resources.btn_stop_256;
+            this.btnStop.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnStop.Enabled = false;
+            this.btnStop.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnStop.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnStop.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
+            this.btnStop.Location = new System.Drawing.Point(659, 695);
+            this.btnStop.Margin = new System.Windows.Forms.Padding(0);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(25, 25);
+            this.btnStop.TabIndex = 15;
+            this.toolTip1.SetToolTip(this.btnStop, "Stop");
+            this.btnStop.UseVisualStyleBackColor = false;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
+            // btnStart
+            // 
+            this.btnStart.BackColor = System.Drawing.Color.Transparent;
+            this.btnStart.BackgroundImage = global::WebLinkCrawler.Properties.Resources.btn_play_256;
+            this.btnStart.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnStart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
+            this.btnStart.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
+            this.btnStart.Location = new System.Drawing.Point(702, 695);
+            this.btnStart.Margin = new System.Windows.Forms.Padding(0);
+            this.btnStart.Name = "btnStart";
+            this.btnStart.Size = new System.Drawing.Size(25, 25);
+            this.btnStart.TabIndex = 14;
+            this.toolTip1.SetToolTip(this.btnStart, "Start");
+            this.btnStart.UseVisualStyleBackColor = false;
+            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(33)))), ((int)(((byte)(33)))));
-            this.ClientSize = new System.Drawing.Size(769, 739);
+            this.ClientSize = new System.Drawing.Size(741, 739);
             this.Controls.Add(this.btnFix);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.btnStop);
@@ -556,6 +570,7 @@
         private System.Windows.Forms.Button btnFix;
         private System.Windows.Forms.NumericUpDown numTaskCount;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }
 
