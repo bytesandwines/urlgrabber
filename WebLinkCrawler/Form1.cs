@@ -163,9 +163,24 @@ namespace WebLinkCrawler
             List<string> tempList = new List<string>();
             bool isRead = mDbController.TryReadAllLines(mSelectedFilePath, out tempList);
 
+
             if (!isRead)
             {
                 MessageBox.Show("Girilen input dosyasındaki linkler okunamadı! İşlem iptal ediliyor.");
+                return;
+            }
+
+            // Son işlenen url bilgisini okunan satırlardan bul ve daha sonrasında process initial links içerisinde işleme tabi tutulacak
+            // linkleri belirlemede kullan
+
+            bool isStartUrlFound = mDbController.ExtractLastlyProcessedLink(ref tempList);
+            if (!isStartUrlFound)
+            {
+                MessageBox.Show("Girilen input dosyasında son işlenen linke ait satır bulunamadı, işlem iptal edilecektir." + Environment.NewLine
+                    + "Lütfen referans linkler dosyasının başına hangi urlden devam etmek istediğinizi belirtmek için : " + Environment.NewLine
+                    + "## Lastly Processed link :www.exampleurl.com.tr" + Environment.NewLine
+                    + "ifadesini ekleyiniz."
+                );
                 return;
             }
 
@@ -250,16 +265,17 @@ namespace WebLinkCrawler
                     SetLastIteratioInformation("", toplamİslenen, candidateCount, initialLinkCount);
 
 
+
                     /// UPDATED: 13.12.2019
                     /// Added : saving results after each iteration.
-                    mDbController.Save(mOutputFilePath);
+                    mDbController.Save(mOutputFilePath, currentLinks);
 
                     ClearConsole();
                 }
 
                 WriteToConsole("#### URL extraction is Finished ###");
 
-                mDbController.Save(mOutputFilePath);
+                // mDbController.Save(mOutputFilePath);
 
                 WriteToConsole("#### URLs are saved ###");
 
@@ -460,16 +476,36 @@ namespace WebLinkCrawler
                 return;
             }
 
+
+
+            bool isStartUrlFound = mDbController.ExtractLastlyProcessedLink(ref tempList);
+            if (!isStartUrlFound)
+            {
+                MessageBox.Show("Girilen input dosyasında son işlenen linke ait satır bulunamadı, işlem iptal edilecektir." + Environment.NewLine
+                    + "Lütfen referans linkler dosyasının başına hangi urlden devam etmek istediğinizi belirtmek için : " + Environment.NewLine
+                    + "## Lastly Processed link :www.exampleurl.com.tr" + Environment.NewLine
+                    + "ifadesini ekleyiniz."
+                );
+                return;
+            }
+
+            // Fixing empty lines.
+            var notEmptyList = tempList.Where(s => !string.IsNullOrEmpty(s)).ToList();
             // Fixing last character of urls
-            var newList = tempList.Select(s =>  mDbController.FixLastCharacter(s)).ToList();
+            var newList = notEmptyList.Select(s =>  mDbController.FixLastCharacter(s)).ToList();
             // Selecting only unique ones.
             var uniques = newList.Distinct();
             // Checking contains conditions
             var remaining = uniques.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
+            // Before saving the fixed urls we need to add header information first.
+            string header = "## Lastly Processed link ;" + mDbController.GetLastlyProcessedLink();
             // TADA now save the remainings.
+            List<string> outputlist = new List<string>();
+            outputlist.Add(header);
+            outputlist.AddRange(tempList);
             try
             {
-                mDbController.UpdateOutput(mOutputFilePath, remaining);
+                mDbController.UpdateOutput(mOutputFilePath, outputlist);
                 MessageBox.Show("Çıktı dosyası başarı ile düzeltildi.");
                 
             }

@@ -47,6 +47,8 @@ namespace WebLinkCrawler
         private int mWebRequestTimeout = 3000;
         int maxParallelProcess = 100;
 
+        private string startUrl;
+        
         public LinkDbController(int pMaxNumberDomainCollected, int pMaxNumberLinkDiversity, int webRequestTimeout =3000, int parallelDriverCount = 350)
         {
             mDic = new Dictionary<string, List<CustomLink>>();
@@ -138,6 +140,7 @@ namespace WebLinkCrawler
                 mCandidateUrls = mCandidateUrls.Where(url => (url.Length > 5) && (url.StartsWith("wwww") || url.StartsWith("http"))).ToList();
 
                 List<Task<DomainInfo>> tasks = new List<Task<DomainInfo>>();
+
                 Console.WriteLine("Adayların tamamına ait domain bilgileri alınmak üzere taskler oluşturuluyor....");
                 DateTime dt1 = DateTime.Now;
                 for (int i = 0; i < mCandidateUrls.Count; i++)
@@ -156,7 +159,7 @@ namespace WebLinkCrawler
                 List<int> removalList = new List<int>();
                 for (int i = 0; i < taskResults.Count; i++)
                 {
-                    if (taskResults[i] == null)
+                    if (taskResults[i] == null && mCandidateUrls[i] != startUrl)
                         removalList.Add(i);
                 }
 
@@ -221,12 +224,17 @@ namespace WebLinkCrawler
                     taskResults.RemoveAt(removalList[i] - i);
                 }
 
-                List<string> tempCandidates = new List<string>();
+                // Skip Candidate Urls until we reach the starting URL (lastly processed url with this application)
+                SkipUntilTheStartUrl(ref mCandidateUrls,ref domainInfos,  startUrl);
+
+
+                // Store only one sample for each domain to create candidates.
                 removalList = new List<int>();
                 for (int i = 0; i < mCandidateUrls.Count; i++)
                 {
                     string host = GetHost(domainInfos[i]);
-                    if (mDic[host].Count == mMaxNumberLinkDiversity)
+                    // if (mDic[host].Count == mMaxNumberLinkDiversity)
+                    if (mDic[host].Count > 1)
                     {
                         removalList.Add(i);
                     }
@@ -239,13 +247,13 @@ namespace WebLinkCrawler
                 }
 
 
-                /// ADDED: 16.12.2019 
-                /// Store only one sample per each domain in the candidate urls
-                mCandidateUrls = new List<string>();
-                foreach (var host in mDic.Keys)
-                {
-                    mCandidateUrls.Add(mDic[host][0].Url);
-                }
+                ///// ADDED: 16.12.2019 
+                ///// Store only one sample per each domain in the candidate urls
+                //mCandidateUrls = new List<string>();
+                //foreach (var host in mDic.Keys)
+                //{
+                //    mCandidateUrls.Add(mDic[host][0].Url);
+                //}
 
 
             }
@@ -258,7 +266,7 @@ namespace WebLinkCrawler
             return true;
         }
 
-        
+       
         public async Task<List<CustomLink>> TakeMax()
         {
             List<CustomLink> val = new List<CustomLink>();
@@ -958,21 +966,39 @@ namespace WebLinkCrawler
                 return false;
             }
         }
-        public void Save(string filePath)
+        public void Save(string filePath, List<CustomLink> currentIterationInputs)
         {
-            var outputList = new List<string>();
-            lock(mDic)
+            var outputLinkList = new List<string>();
+            
+            lock (mDic)
             {
                 foreach (var key in mDic.Keys)
                 {
                     foreach (var customUrl in mDic[key])
                     {
-                        outputList.Add(customUrl.Url);
+                        outputLinkList.Add(customUrl.Url);
                     }
                 }
             }
-          
-            
+
+            for (int i = 0; i < currentIterationInputs.Count; i++)
+            {
+                var customLink = currentIterationInputs[currentIterationInputs.Count - i - 1];
+                if (outputLinkList.Contains(customLink.Url))
+                {
+                    startUrl = customLink.Url;
+                    break;
+                }
+
+            }
+
+            // Insert lastly processed link first to the header part
+            string header = "## Lastly Processed link ;" + startUrl;
+
+            var outputList = new List<string>();
+            outputList.Add(header);
+            outputList.AddRange(outputLinkList);
+
             File.WriteAllLines(filePath, outputList);
         }
 
@@ -997,6 +1023,7 @@ namespace WebLinkCrawler
 
             return true;
         }
+
 
         public string GetDictionaryContent()
         {
@@ -1029,5 +1056,41 @@ namespace WebLinkCrawler
 
             return input;
         }
+
+
+        private bool SkipUntilTheStartUrl(ref List<string> tempList, ref List<DomainInfo>dominaInfos,  string startUrl)
+        {
+            var indexOf = tempList.IndexOf(startUrl);
+
+            if (indexOf < 0)
+                return false;
+
+            tempList.RemoveRange(0, indexOf);
+            dominaInfos.RemoveRange(0, indexOf);
+            return true;
+        }
+
+        public bool ExtractLastlyProcessedLink(ref List<string> tempList)
+        {
+            var firstLine = tempList[0];
+            if (!firstLine.StartsWith("##") || !firstLine.Contains(';'))
+                return false;
+
+            startUrl = firstLine.Split(';').Last();
+            startUrl = startUrl.Replace(" ", "");
+
+            if (tempList.Select(s => s == startUrl).Count() < 1)
+                return false;
+
+            tempList.RemoveAt(0);
+
+            return true;
+        }
+
+        public string GetLastlyProcessedLink()
+        {
+            return startUrl;
+        }
+
     }
 }
